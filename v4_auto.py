@@ -103,4 +103,4 @@ while True:
     out.write(frame)
 
 cap.release(); out.release()
-print("Done.")
+print("Done. ")
