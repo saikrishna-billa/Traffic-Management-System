@@ -55,6 +55,7 @@ while True:
                 vehicle_boxes.append((x1,y1,x2,y2,label,conf))
 
     # ===== Batch crops for AUTO model =====
+    
     crops=[]
     crop_coords=[]
     for (x1,y1,x2,y2,_,_) in vehicle_boxes:
