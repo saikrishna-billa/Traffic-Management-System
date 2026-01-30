@@ -1,39 +1,40 @@
-import time
 import math
 
-# ---------------- RED LIGHT JUMP ----------------
-def detect_red_light_jump(vehicle_box, stop_line_y, light_is_red):
-    """
-    vehicle_box: (x1, y1, x2, y2, id)
-    """
-    x1, y1, x2, y2, vid = vehicle_box
-    vehicle_bottom = y2
-
-    if light_is_red and vehicle_bottom > stop_line_y:
-        return True
-    return False
-
-
-# ---------------- RASH DRIVING ----------------
+# ================= MEMORY =================
 speed_memory = {}
+red_jump_memory = set()
 
-def detect_rash_driving(vehicle_box, fps, speed_threshold=35):
-    """
-    Simple pixel-based speed estimation
-    """
+def reset_violation_memory():
+    global speed_memory, red_jump_memory
+    speed_memory = {}
+    red_jump_memory = set()
+
+# ================= RASH DRIVING =================
+def detect_rash_driving(vehicle_box, fps, speed_threshold=25):
     x1, y1, x2, y2, vid = vehicle_box
-    cx = int((x1 + x2) / 2)
-    cy = int((y1 + y2) / 2)
+    cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
 
     if vid not in speed_memory:
-        speed_memory[vid] = (cx, cy, time.time())
+        speed_memory[vid] = (cx, cy)
+        return False, 0.0
+
+    px, py = speed_memory[vid]
+    dist = math.hypot(cx - px, cy - py)
+
+    speed = dist * fps  # pixels/sec
+    speed_memory[vid] = (cx, cy)
+
+    return speed > speed_threshold, speed
+
+# ================= RED LIGHT JUMP =================
+def detect_red_light_jump(vehicle_box, stop_line_y, light_is_red):
+    x1, y1, x2, y2, vid = vehicle_box
+
+    if not light_is_red:
         return False
 
-    px, py, pt = speed_memory[vid]
-    dist = math.hypot(cx - px, cy - py)
-    dt = time.time() - pt
+    if y2 > stop_line_y and vid not in red_jump_memory:
+        red_jump_memory.add(vid)
+        return True
 
-    speed = (dist / dt) if dt > 0 else 0
-    speed_memory[vid] = (cx, cy, time.time())
-
-    return speed > speed_threshold
+    return False
